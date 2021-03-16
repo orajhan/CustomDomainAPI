@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+
+  Custom domain name for API Gateway: 
+  1. Create custom domain
+  2. Select Endpoint- Regional or Edge-optimized
+  3. Select ACM certificate
+  4. Complete API Mapping
+  5. Create a record in Route53 and associate it with API Gateway Alias
+
+Parameters:
+  DomainName:
+    Description: 'Please input your domain name'
+    Type: String
+    MaxLength: '50'
+    MinLength: '3'
+    ConstraintDescription: Please input your domain name.
+  HostedZoneId:
+    Description: 'Please input your Hosted zone ID in Route53'
+    Type: String
+    MaxLength: '50'
+    MinLength: '3'
+    ConstraintDescription: Please input your Hosted zone ID in Route53.
+  ACM:
+    Description: 'Please input ARN of ACM certificate'
+    Type: String
+    MaxLength: '200'
+    MinLength: '1'
+    ConstraintDescription: Please input ARN of ACM certificate.
+  ApiGateway:
+    Description: 'Please input ID of API Gateway'
+    Type: String
+    MaxLength: '30'
+    MinLength: '1'
+    ConstraintDescription: Please input ID of API Gateway.
+
+Resources:
+  # Create a CNAME and associsate with API Gateway  
+  CNAMERecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      ResourceRecords:
+        - !GetAtt myDomainName.RegionalDomainName  #API Gateway
+      TTL: 60
+      Type: CNAME
+  # Create Custom Domain in API Gateway
+  myDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      RegionalCertificateArn: !Ref ACM
+      DomainName: !Ref DomainName
+      EndpointConfiguration:
+        Types:
+          - REGIONAL # REGIONAL or EDGE
+      SecurityPolicy: TLS_1_2
+  # API mapping with Custom Domain
+  apiMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    DependsOn:
+      - CNAMERecord
+    Properties:
+      DomainName: !Ref DomainName
+      RestApiId: !Ref ApiGateway
+      Stage: dev #your stage
+Outputs:  
+  DomainName:
+    Value: !Ref myDomainName
+  
