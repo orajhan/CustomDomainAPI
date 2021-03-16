@@ -63,7 +63,7 @@ Resources:
     Properties:
       DomainName: !Ref DomainName
       RestApiId: !Ref ApiGateway
-      Stage: dev #your stage
+      Stage: dev #your stage in API Gateway
 Outputs:  
   DomainName:
     Value: !Ref myDomainName
